@@ -1,11 +1,11 @@
 `ifndef BITADD
 `define BITADD
 module bitAdder (
-    input logic A, B, C,
-    output logic S,Cout
+    input wire A, B, C,
+    output wire S,Cout
 );
-    assign S = A ^ B ^ Cin;
-    assign Cout = Cin & (A ^ B) | (A & B);
+    assign S = A ^ B ^ C;
+    assign Cout = C & (A ^ B) | (A & B);
 endmodule
 
 `endif
