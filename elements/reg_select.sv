@@ -4,20 +4,21 @@
 `include "./mux2.sv"
 
 module registerSelector(
-    input logic [2:0] address,
+    input logic [3:0] address1, address2, address3,
     input logic clk, write,
     input logic [7:0] nextval,
-    output logic [7:0] out,
+    output logic [7:0] out1, out2
 );
-    logic [7:0] r[7:0];
+    logic [15:0] r[7:0];
 
-    always_ff @(posedge clk)
+    always_ff @(negedge clk)
     begin
         if (write)
-            r[address] <= nextval;
+            r[address3] <= nextval;
     end
     
-    assign out = r[address];
+    assign out1 = r[address1];
+    assign out2 = r[address2];
 
 endmodule
 

@@ -1,12 +1,14 @@
 `ifndef ALU
 `define ALU
 `include "./word_adder.sv"
+`include "./bit_adder.sv"
 module alu(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
     input logic [7:0] A, B, 
-    input logic [4:0] code,
+    input logic [3:0] code,
+    input logic prevCarry,
     output logic [7:0] Y,
     output logic carry, overflow, zero, negative;
 );
@@ -16,8 +18,12 @@ module alu(
     
     logic [7:0] Bout;
     logic [8:0] S;
+    logic computedCarry;
     assign Bout = code[0] ? ~B : B;
-    assign S = A + Bout + code[0];
+    // normal op: code[0]
+    // with carry = code[0] ^ carry
+    assign computedCarry = code[3] & (code[0] ^ prevCarry) | ~code[3] & code[0];
+    wordAdder adder(A,Bout,computedCarry,S[7:0],S[8]);
     logic [15:0] mult;
     assign mult = A*B;
     assign carry = S[8];
