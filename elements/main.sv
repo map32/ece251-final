@@ -28,28 +28,17 @@ module project(
 
 );
 
-    module processor(
-    //
-    // ---------------- PORT DEFINITIONS ----------------
-    //
-    input logic clk, reset,
-    output logic [15:0] pc,
-    input logic [7:0] instr,
-    output logic memWE,
-    output logic [7:0] aluout, writedata,
-    input logic [7:0] databus
-);
-
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
-    logic [31:0] pc, instr, readdata;
+    logic [15:0] pc, instr;
+    logic [7:0] aluout, readdata;
     
     // instantiate processor
-    processor cpu(.clk(clk), .reset(reset), .pc(pc), .instr(instr), .memWE(memwrite), .databus(readdata), .writedata(writedata), .readdata(readdata));
+    processor cpu(.clk(clk), .reset(reset), .pc(pc), .instr(instr), .memWE(memwrite), .aluout(aluout), .writedata(writedata), .readdata(databus));
     
     // instantiate instruction memory
-    imem imem(pc[7:2], instr);
+    memory mem(pc, instr);
 
 endmodule
 

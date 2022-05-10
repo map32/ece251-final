@@ -14,14 +14,14 @@
 `ifndef CONTROLLER
 `define CONTROLLER
 
-`include "./decoder.sv"
-`include "./aludec.sv"
+`include "decoder.sv"
+`include "aludec.sv"
 
 module controller(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
-    input logic [7:0] instr, prevInstr,
+    input logic [7:0] instr,
     input logic [3:0] aluflags,
     output logic regWE, memWE, regChange, imm, load, store, offset, flush,
     output logic [2:0] pccontrol,
@@ -34,7 +34,7 @@ module controller(
     logic immm;
     assign immm = imm;
     maindec md(instr, aluflags, regWE, memWE, regChange, imm, load, store, offset, flush, pccontrol);
-    aludec ad(instr[7:2],immm,alucontrol);
+    aludec ad(instr[7:3],immm,alucontrol);
 
 endmodule
 

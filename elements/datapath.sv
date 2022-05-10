@@ -42,7 +42,7 @@ module datapath(
     logic [15:0] pcnext, lrnext;
     logic [7:0] regA, regB, srca, srcb;
     logic [3:0] nextFlags;
-    logic regmsb;
+    logic regmsb, flagWE;
 
     //load or reset last instr
     instr_load last(clk,reset,flush,instr,prevInstr); //output: previnstr
@@ -77,9 +77,10 @@ module datapath(
 
     // ALU logic
     logic C;
+    assign flagWE = ~(alucontrol[1] | alucontrol[2]);
     mux2 #(8) immSelector(regB,instr,imm,srcb);
     mux2 #(8) pcSelector(regA,pc[7:0],offset,srca);
-    aluFlags flagRegs(nextFlags,flags,clk,reset,alucontrol[0]);
+    aluFlags flagRegs(nextFlags,flags,clk,reset,flagWE);
     assign C = flags[3];
     alu alu(.A(srca), .B(srcb), .code(alucontrol), .prevCarry(flags[3]), .Y(aluout),
     .carry(nextFlags[3]), .overflow(nextFlags[2]), .zero(nextFlags[1]), .negative(nextFlags[0]));

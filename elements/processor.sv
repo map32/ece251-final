@@ -41,7 +41,7 @@ module processor(
 
     // MIPS controller
     controller c(
-        instr,prevInstr, aluflags,
+        prevInstr, aluflags,
         regWE, memWE, regChange, imm, load, store, offset, flush,
         pccontrol,alucontrol);
 
