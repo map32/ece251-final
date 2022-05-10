@@ -19,6 +19,7 @@
 `include "./branch.sv"
 `include "./instr_load.sv"
 `include "./alu_flags.sv"
+`include "./shifter.sv"
 module datapath(
     //
     // ---------------- PORT DEFINITIONS ----------------
@@ -30,7 +31,7 @@ module datapath(
         output logic [7:0] prevInstr,
         output logic [7:0] aluout, writedata,
         output logic [3:0] flags,
-        input logic [7:0] databus,
+        inout logic [7:0] databus,
         input logic [3:0] alucontrol,
         input logic [2:0] pccontrol
 );
@@ -38,11 +39,11 @@ module datapath(
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
     logic [3:0] rnAddr, rmAddr, rdAddr;
-    logic [7:0] lower;
+    logic [7:0] lower, shftout;
     logic [15:0] pcnext, lrnext;
-    logic [7:0] regA, regB, srca, srcb;
+    logic [7:0] regA, regB, srca, srcb, aluorshft;
     logic [3:0] nextFlags;
-    logic regmsb, flagWE;
+    logic regmsb, flagWE, shiftdir;
 
     //load or reset last instr
     instr_load last(clk,reset,flush,instr,prevInstr); //output: previnstr
@@ -69,19 +70,23 @@ module datapath(
     // register file logic
     assign rdAddr = {regmsb, lower[2:0]};
     assign rmAddr = instr[3:0];
+    
     mux2 #(4) regAselector(instr[7:4], rdAddr, imm, rnAddr);
-    mux2 #(8) regWriteSelector(aluout, databus, load, writedata);
+
+    mux2 #(8) regShiftSelector(aluout,shftout,shft,aluorshft);
+    mux2 #(8) regWriteSelector(aluorshft, databus, load, writedata);
 
     registerSelector rf(.address1(rnAddr), .address2(rmAddr), .address3(rdAddr),
     .clk(clk), .write(writeEnable), .nextval(writedata), .out1(regA), out2(regB));
 
+    assign shiftdir = ~lower[2];
+    shifter twoBitShifter(srcA, srcB[1:0], shiftdir,shftout);
+
     // ALU logic
-    logic C;
-    assign flagWE = ~(alucontrol[1] | alucontrol[2]);
+    assign flagWE = (alucontrol[2:0] == 3'b000) & (lower[7] == 0);
     mux2 #(8) immSelector(regB,instr,imm,srcb);
     mux2 #(8) pcSelector(regA,pc[7:0],offset,srca);
     aluFlags flagRegs(nextFlags,flags,clk,reset,flagWE);
-    assign C = flags[3];
     alu alu(.A(srca), .B(srcb), .code(alucontrol), .prevCarry(flags[3]), .Y(aluout),
     .carry(nextFlags[3]), .overflow(nextFlags[2]), .zero(nextFlags[1]), .negative(nextFlags[0]));
 

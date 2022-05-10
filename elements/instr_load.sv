@@ -30,7 +30,7 @@ module instr_load(
     //
     always_ff @(posedge clk, posedge reset)
     begin
-        if (reset | flush) prevInstr <= 8'b11111111;
+        if (reset | ~flush) prevInstr <= 8'b11111111;
         else prevInstr <= instr;
     end
 

@@ -10,7 +10,7 @@ module alu(
     input logic [3:0] code,
     input logic prevCarry,
     output logic [7:0] Y,
-    output logic carry, overflow, zero, negative;
+    output logic carry, overflow, zero, negative
 );
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------

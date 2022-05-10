@@ -22,7 +22,8 @@ module project(
     // ---------------- PORT DEFINITIONS ----------------
     //
     input logic clk, reset,
-    output logic [7:0] writedata,
+    inout logic [7:0] databus,
+    output logic [7:0] aluout, 
     output logic [15:0] dataadr, 
     output logic memwrite,
 
@@ -38,7 +39,7 @@ module project(
     processor cpu(.clk(clk), .reset(reset), .pc(pc), .instr(instr), .memWE(memwrite), .aluout(aluout), .writedata(writedata), .readdata(databus));
     
     // instantiate instruction memory
-    memory mem(pc, instr);
+    memory mem(clk,memwrite,dataadr,pc,databus,instr);
 
 endmodule
 

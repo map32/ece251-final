@@ -21,8 +21,8 @@ module branchLogic (
     logic [7:0] buff, buff2;
     logic [15:0] pcplus1;
     doubleword_increment incre(pc,pcplus1);
-    mux2(8'b00000000,{5b'0,lower},code[2],buff);
-    wordAdder(pc[15:8],buff,C,buff2);
+    mux2 jumpSelector(8'b00000000,{5b'0,lower},code[2],buff);
+    wordAdder fullWord(pc[15:8],buff,C,buff2);
     always_ff@(*)
     begin
         case(code[1:0])

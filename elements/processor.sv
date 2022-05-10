@@ -26,7 +26,7 @@ module processor(
     input logic [7:0] instr,
     output logic memWE,
     output logic [7:0] aluout, writedata,
-    input logic [7:0] databus
+    inout logic [7:0] databus
 );
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
