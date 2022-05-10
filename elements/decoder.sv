@@ -18,30 +18,47 @@ module maindec(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
-    input logic [4:0] op,
-    output logic memtoreg, memwrite,
-    output logic branch, alusrc,
-    output logic regdst, regwrite,
-    output logic jump,
-    output logic [1:0] aluop
+    input logic [7:0] op,
+    input logic [3:0] flags,
+    output logic regWE, memWE, regChange, imm, load, store, offset, flush,
+    output logic [2:0] bcode
+    //output logic writeEnable, regContext, imm, load, flush, pcSel,
+    //wE = regwrite
+    //load = memtoreg
+    //rC = regmsb
+    //pcSel = branch
 );
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
-    logic [8:0] controls;
-    assign {regwrite, regdst, alusrc, branch, memwrite,
-    memtoreg, jump, aluop} = controls;
+    logic [9:0] controls;
+    logic sop,top,jmp;
+    assign {load, regWE, store, memWE, regChange, imm, offset, shft, flush, sop,top} = controls;
+    assign bcode = {jmp, sop, top};
+    assign jmp = (flags == op[3:0]);
 
     always @*
-        case(op)
-            6'b000000: controls <= 9'b110000010; // RTYPE
-            6'b100011: controls <= 9'b101001000; // LW
-            6'b101011: controls <= 9'b001010000; // SW
-            6'b000100: controls <= 9'b000100001; // BEQ
-            6'b001000: controls <= 9'b101000000; // ADDI
-            6'b000010: controls <= 9'b000000100; // J
-            default: controls <= 9'bxxxxxxxxx; // illegal op
+    begin
+        case(op[7:6])
+            2'b00: controls <= 11'b01000000000; // RTYPE
+            2'b01:
+                case(op[5:4])
+                    2'b01: controls <= 11'b0100000000;
+                    default: controls <= 11'b01000100000;
+                endcase
+            2'b10: controls <= {~op[4],~op[4],op[4],op[4],1'b0,op[5],op[5],2'b00}; // SW
+            2'b11:
+                case(op[5:2])
+                    4'b1100: controls <= 11'b01000001000;
+                    4'b1101: controls <= 11'b01000001000;
+                    4'b1110: controls <= 11'b00001000100;
+                    4'b1111: controls <= 11'b00000000100;
+                    4'b10xx: controls <= 11'b00000010010;
+                    4'b00xx: controls <= {8'b00000110, op[3:0] == 1111 ,2'b01};
+                    default: controls <= 11'b00000110011;
+                endcase
         endcase
+    end
 
 endmodule
 

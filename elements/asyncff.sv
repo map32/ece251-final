@@ -3,7 +3,7 @@
 
 // asynchronously resettable flip flop
 
-module flopr_async
+module asyncff
 #(parameter l = 8)(
     //
     // ---------------- PORT DEFINITIONS ----------------

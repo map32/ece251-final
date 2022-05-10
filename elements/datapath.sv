@@ -18,21 +18,18 @@
 `include "./alu.sv"
 `include "./branch.sv"
 `include "./instr_load.sv"
+`include "./alu_flags.sv"
 module datapath(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
         input logic clk, reset,
-        input logic writeEnable, regContext, isItype,
-        input logic isLoad,
-        input logic isUpper,
-        input logic cycleDone,
+        input logic writeEnable, regChange, imm, load, flush, offset,
         output logic [15:0] pc, lr,
         input logic [7:0] instr,
-        input logic [7:0] prevInstr,
+        output logic [7:0] prevInstr,
         output logic [7:0] aluout, writedata,
-        input logic C,
-        output logic [3:0] nextFlags,
+        output logic [3:0] flags,
         input logic [7:0] databus,
         input logic [3:0] alucontrol,
         input logic [2:0] pccontrol
@@ -40,14 +37,16 @@ module datapath(
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
-    logic [3:0] regAaddress;
-    logic [7:0] writereg;
-    logic [15:0] pcn, lrn;
-    logic [7:0] regA, regB, aluA, aluB;
-    logic [31:0] result;
+    logic [3:0] rnAddr, rmAddr, rdAddr;
+    logic [7:0] lower;
+    logic [15:0] pcnext, lrnext;
+    logic [7:0] regA, regB, srca, srcb;
+    logic [3:0] nextFlags;
+    logic regmsb;
 
-    instr_load(clk,reset,isUpper,instr,prevInstr);
-
+    //load or reset last instr
+    instr_load last(clk,reset,flush,instr,prevInstr); //output: previnstr
+    assign lower = prevInstr;
     // next PC logic
     always_ff@(posedge clk, posedge reset)
     begin
@@ -55,28 +54,34 @@ module datapath(
         begin
             pc <= 15b'0;
             lr <= 15b'0;
+            regmsb <= 1b'0;
         end
         else
         begin
             pc <= pcnext;
             lr <= lrnext;
+            if (regChange)
+                regmsb <= instr[0];
         end
     end
-    branchLogic(pc,lr,{regB, regA},aluout,prevInstr[2:0],pccontrol,nextFlags[3],pcnext,lrnext);
-    mux2 #(16) pcbrmux(pc, pcnextstep, cycleDone, pcnext);
+    branchLogic pclogic(pc,lr,{srca,srcb},aluout,lower[2:0],pccontrol,nextFlags[3],pcnext,lrnext);
 
     // register file logic
-    assign writereg = {regContext, prevInstr[7:5]};
-    mux2 #(4) regAmux(instr[3:0], writereg, isItype, regAaddress);
-    mux2 #(8) resmux(aluout, databus, isLoad, writedata);
+    assign rdAddr = {regmsb, lower[2:0]};
+    assign rmAddr = instr[3:0];
+    mux2 #(4) regAselector(instr[7:4], rdAddr, imm, rnAddr);
+    mux2 #(8) regWriteSelector(aluout, databus, load, writedata);
 
-    registerSelector rf(.address1(regAaddress), .address2(instr[7:4]), .address3(writereg),
+    registerSelector rf(.address1(rnAddr), .address2(rmAddr), .address3(rdAddr),
     .clk(clk), .write(writeEnable), .nextval(writedata), .out1(regA), out2(regB));
 
     // ALU logic
-    mux2 #(8) iTypeChecker(regB,instr,isItype,srcb);
-    assign srca = regA;
-    alu alu(.A(srca), .B(srcb), .code(alucontrol), .prevCarry(C), .Y(aluout),
+    logic C;
+    mux2 #(8) immSelector(regB,instr,imm,srcb);
+    mux2 #(8) pcSelector(regA,pc[7:0],offset,srca);
+    aluFlags flagRegs(nextFlags,flags,clk,reset,alucontrol[0]);
+    assign C = flags[3];
+    alu alu(.A(srca), .B(srcb), .code(alucontrol), .prevCarry(flags[3]), .Y(aluout),
     .carry(nextFlags[3]), .overflow(nextFlags[2]), .zero(nextFlags[1]), .negative(nextFlags[0]));
 
 endmodule

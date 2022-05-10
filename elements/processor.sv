@@ -11,44 +11,45 @@
 // See https://booksite.elsevier.com/9780123944245/?ISBN=9780123944245
 //
 ///////////////////////////////////////////////////////////////////////////////
-`ifndef MIPS
-`define MIPS
+`ifndef PROCESSOR
+`define PROCESSOR
 
-`include "./word_adder.sv"
+`include "./datapath.sv"
 `include "./controller.sv"
 
-module mips(
+module processor(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
     input logic clk, reset,
     output logic [15:0] pc,
     input logic [7:0] instr,
-    output logic memwrite,
+    output logic memWE,
     output logic [7:0] aluout, writedata,
-    input logic [7:0] readdata
+    input logic [7:0] databus
 );
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
-    logic memtoreg, alusrc, regdst,
-    regwrite, jump, pcsrc, zero;
-    logic [2:0] alucontrol;
+    logic [15:0] lr;
+    logic [7:0] prevInstr;
+    logic [3:0] aluflags;
+    logic regWE, memWE, regChange, imm, load, store, offset, flush;
+    logic [2:0] pccontrol;
+    logic [3:0] alucontrol;
+
 
     // MIPS controller
     controller c(
-        instr[31:26], instr[5:0], zero,
-        memtoreg, memwrite, pcsrc,
-        alusrc, regdst, regwrite,
-        jump, alucontrol);
+        instr,prevInstr, aluflags,
+        regWE, memWE, regChange, imm, load, store, offset, flush,
+        pccontrol,alucontrol);
 
-    // MIPS datapath
     datapath dp(
-        clk, reset, memtoreg,
-        pcsrc, alusrc, regdst,
-        regwrite, jump, alucontrol,
-        zero, pc, instr,
-        aluout, writedata, readdata);
+        clk, reset,
+        regWE, regChange, imm, load, flush, offset,
+        pc, lr, instr, prevInstr, aluout, writedata, aluflags,
+        databus, alucontrol, pccontrol);
 
 endmodule
 

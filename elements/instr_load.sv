@@ -21,16 +21,16 @@ module instr_load(
     //
     // ---------------- PORT DEFINITIONS ----------------
     //
-    input logic clk, reset, isUpper,
+    input logic clk, reset, flush,
     input logic [7:0] instr,
     output logic [7:0] prevInstr
 );
     //
     // ---------------- MODULE DESIGN IMPLEMENTATION ----------------
     //
-    always_ff @(negedge clk, posedge reset)
+    always_ff @(posedge clk, posedge reset)
     begin
-        if (reset) instrReg <= 0;
+        if (reset | flush) prevInstr <= 8'b11111111;
         else prevInstr <= instr;
     end
 
